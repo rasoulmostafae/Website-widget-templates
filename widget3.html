@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>codzar Dream Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .chat-widget {
+      box-shadow: 0 25px 60px -15px rgba(236, 72, 153, 0.35);
+    }
+
+    .bubble {
+      animation: bubbleFloat 0.5s ease-out forwards;
+    }
+
+    @keyframes bubbleFloat {
+      0% { transform: translateY(30px) scale(0.8); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 min-h-screen flex items-center justify-center">
+
+  <!-- Floating Button -->
+  <button id="chat-toggle"
+    class="fixed bottom-8 right-8 w-16 h-16 bg-white shadow-xl rounded-3xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 border border-white z-50">
+    <div class="w-10 h-10 bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-400 rounded-2xl flex items-center justify-center">
+      <i class="fa-solid fa-heart text-white text-2xl"></i>
+    </div>
+  </button>
+
+  <!-- Chat Widget -->
+  <div id="chat-widget" class="hidden fixed bottom-28 right-8 w-96 bg-white rounded-3xl overflow-hidden chat-widget border border-purple-200">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 p-6 text-white">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-11 h-11 bg-white/25 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/30">
+            <i class="fa-solid fa-sun text-3xl"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-2xl tracking-tight">codzar</h3>
+            <p class="text-white/90 text-sm flex items-center gap-1.5">
+              <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+              Feeling dreamy today
+            </p>
+          </div>
+        </div>
+        <button id="close-chat" class="text-white/80 hover:text-white p-2 rounded-2xl hover:bg-white/20 transition-all">
+          <i class="fa-solid fa-xmark text-2xl"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div id="chat-messages" class="h-96 p-6 overflow-y-auto bg-white space-y-6 scrollbar-thin scrollbar-thumb-purple-200">
+      <!-- JS adds messages here -->
+    </div>
+
+    <!-- Input -->
+    <div class="p-5 bg-white border-t border-purple-100">
+      <div class="flex gap-3">
+        <input 
+          id="user-input"
+          type="text" 
+          placeholder="Share your thoughts..." 
+          class="flex-1 bg-purple-50 border border-purple-200 focus:border-purple-400 rounded-3xl px-6 py-4 focus:outline-none text-gray-700 placeholder-gray-400 transition-all"
+        />
+        <button id="send-btn"
+          class="w-14 h-14 bg-gradient-to-br from-pink-400 to-purple-400 rounded-3xl flex items-center justify-center text-white hover:scale-110 transition-all shadow-md">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById('chat-toggle');
+    const widget = document.getElementById('chat-widget');
+    const closeBtn = document.getElementById('close-chat');
+    const messagesContainer = document.getElementById('chat-messages');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    function addWelcomeMessage() {
+      const welcome = `
+        <div class="flex gap-4 bubble">
+          <div class="w-9 h-9 bg-gradient-to-br from-pink-400 to-purple-400 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-sun text-white"></i>
+          </div>
+          <div class="bg-purple-50 rounded-3xl rounded-tl-none px-6 py-4 text-gray-700 max-w-[260px]">
+            Hi beautiful soul ✨<br>
+            I'm Lumi. What's lighting up your heart today?
+          </div>
+        </div>
+      `;
+      messagesContainer.innerHTML = welcome;
+    }
+
+    function addMessage(text, isUser) {
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const messageHTML = `
+        <div class="flex ${isUser ? 'justify-end' : 'gap-4'} bubble">
+          ${!isUser ? `
+          <div class="w-9 h-9 bg-gradient-to-br from-pink-400 to-purple-400 rounded-2xl flex-shrink-0 flex items-center justify-center">
+            <i class="fa-solid fa-sun text-white"></i>
+          </div>` : ''}
+          
+          <div class="${isUser ? 'max-w-[250px]' : 'max-w-[260px]'}">
+            <div class="${isUser 
+              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
+              : 'bg-purple-50 text-gray-700'} 
+              rounded-3xl ${isUser ? 'rounded-br-none' : 'rounded-tl-none'} px-6 py-4">
+              ${text}
+            </div>
+            <p class="text-xs text-gray-400 mt-1 ${isUser ? 'text-right' : 'ml-1'}">${time}</p>
+          </div>
+        </div>
+      `;
+
+      messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function toggleChat() {
+      widget.classList.toggle('hidden');
+      if (!widget.classList.contains('hidden') && messagesContainer.children.length === 0) {
+        addWelcomeMessage();
+        setTimeout(() => input.focus(), 200);
+      }
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, true);
+      input.value = '';
+
+      setTimeout(() => {
+        const softReplies = [
+          "That makes my heart smile 🌸",
+          "I feel the same warmth...",
+          "You're so thoughtful ✨",
+          "Let's explore this together",
+          "Sending you gentle energy 💕"
+        ];
+        addMessage(softReplies[Math.floor(Math.random() * softReplies.length)], false);
+      }, 800);
+    }
+
+    toggleBtn.addEventListener('click', toggleChat);
+    closeBtn.addEventListener('click', toggleChat);
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
