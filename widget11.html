@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cyber Glass Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .title-font {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .glass {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(103, 232, 249, 0.3);
+    }
+
+    .chat-widget {
+      box-shadow: 0 0 80px -20px rgb(103 232 249);
+    }
+
+    .message {
+      animation: cyberEnter 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+
+    @keyframes cyberEnter {
+      from {
+        opacity: 0;
+        transform: translateX(-30px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    .user-bubble {
+      animation: userSend 0.4s ease-out forwards;
+    }
+
+    @keyframes userSend {
+      0% { transform: scale(0.7) translateY(20px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+
+    .glow-cyan {
+      box-shadow: 0 0 25px rgba(103, 232, 249, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 min-h-screen flex items-center justify-center relative overflow-hidden">
+
+  <!-- Background subtle grid -->
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] bg-[size:40px_40px] opacity-30"></div>
+
+  <!-- Floating Button -->
+  <button id="chat-toggle"
+    class="fixed bottom-8 right-8 w-16 h-16 glass rounded-3xl flex items-center justify-center glow-cyan hover:scale-110 active:scale-95 transition-all duration-300 z-50 border border-cyan-400/50">
+    <i class="fa-solid fa-satellite-dish text-cyan-400 text-3xl"></i>
+  </button>
+
+  <!-- Chat Widget -->
+  <div id="chat-widget" class="hidden fixed bottom-28 right-8 w-96 glass rounded-3xl overflow-hidden chat-widget">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border-b border-cyan-400/30 p-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-400 flex items-center justify-center glow-cyan">
+            <i class="fa-solid fa-cube text-zinc-950 text-2xl"></i>
+          </div>
+          <div>
+            <h2 class="title-font text-3xl text-white tracking-tighter">NEXUS</h2>
+            <p class="text-cyan-300 text-sm font-medium">v4.2 • Quantum Link Active</p>
+          </div>
+        </div>
+        <button id="close-chat" 
+          class="text-cyan-300 hover:text-white p-3 rounded-2xl hover:bg-white/10 transition-all">
+          <i class="fa-solid fa-xmark text-2xl"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-messages" class="h-96 p-6 overflow-y-auto space-y-6 bg-zinc-950/70 scrollbar-thin scrollbar-thumb-cyan-900">
+      <!-- JS will inject messages -->
+    </div>
+
+    <!-- Input -->
+    <div class="p-6 bg-zinc-900/80 border-t border-cyan-400/20">
+      <div class="flex gap-3">
+        <input 
+          id="user-input"
+          type="text" 
+          placeholder="CONNECT TO NEXUS..." 
+          class="flex-1 bg-zinc-900 border border-cyan-400/30 focus:border-cyan-400 rounded-3xl px-6 py-4 text-cyan-100 placeholder-zinc-500 focus:outline-none font-mono transition-all"
+        />
+        <button id="send-btn"
+          class="w-14 h-14 bg-gradient-to-br from-cyan-400 to-violet-400 rounded-3xl flex items-center justify-center text-zinc-950 hover:scale-110 active:scale-95 transition-all font-bold">
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById('chat-toggle');
+    const widget = document.getElementById('chat-widget');
+    const closeBtn = document.getElementById('close-chat');
+    const messagesContainer = document.getElementById('chat-messages');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    function addWelcomeMessage() {
+      const welcome = `
+        <div class="flex gap-4 message">
+          <div class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-violet-400 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-cube text-zinc-950"></i>
+          </div>
+          <div class="bg-zinc-900/80 border border-cyan-400/30 rounded-3xl rounded-tl-none px-6 py-4 text-cyan-100 max-w-[260px]">
+            Connection established.<br>
+            Hello, Operator. How may I assist you today?
+          </div>
+        </div>
+      `;
+      messagesContainer.innerHTML = welcome;
+    }
+
+    function addMessage(text, isUser) {
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const html = `
+        <div class="flex ${isUser ? 'justify-end' : 'gap-4'} message">
+          ${!isUser ? `
+          <div class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-violet-400 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-cube text-zinc-950"></i>
+          </div>` : ''}
+          
+          <div class="${isUser ? 'max-w-[250px]' : 'max-w-[260px]'}">
+            <div class="${isUser 
+              ? 'bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white' 
+              : 'bg-zinc-900/80 border border-cyan-400/30 text-cyan-100'} 
+              rounded-3xl ${isUser ? 'rounded-br-none' : 'rounded-tl-none'} px-6 py-4">
+              ${text}
+            </div>
+            <p class="text-xs text-cyan-400/60 mt-1 ${isUser ? 'text-right' : 'ml-2'}">${time}</p>
+          </div>
+        </div>
+      `;
+
+      messagesContainer.insertAdjacentHTML('beforeend', html);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function toggleChat() {
+      widget.classList.toggle('hidden');
+      if (!widget.classList.contains('hidden') && messagesContainer.children.length === 0) {
+        addWelcomeMessage();
+        setTimeout(() => input.focus(), 200);
+      }
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, true);
+      input.value = '';
+
+      setTimeout(() => {
+        const replies = [
+          "Signal received. Processing...",
+          "Accessing core database...",
+          "Interesting request. Here's my analysis.",
+          "Quantum response initialized.",
+          "Confirmed. Here's the output."
+        ];
+        addMessage(replies[Math.floor(Math.random() * replies.length)], false);
+      }, 700);
+    }
+
+    // Events
+    toggleBtn.addEventListener('click', toggleChat);
+    closeBtn.addEventListener('click', toggleChat);
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
