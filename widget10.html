@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Animated Spark Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .chat-widget {
+      animation: widgetFloat 6s ease-in-out infinite;
+      box-shadow: 0 30px 80px -20px rgba(168, 85, 247, 0.5);
+    }
+
+    @keyframes widgetFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .message {
+      animation: messageSlide 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes messageSlide {
+      0% {
+        opacity: 0;
+        transform: translateY(40px) scale(0.85) rotate(-4deg);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0);
+      }
+    }
+
+    .user-message {
+      animation: userMessagePop 0.5s ease-out forwards;
+    }
+
+    @keyframes userMessagePop {
+      0% { transform: scale(0.6); }
+      70% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .bot-avatar {
+      animation: botPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes botPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .send-btn {
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+    
+    .send-btn:active {
+      transform: scale(0.85) rotate(20deg);
+    }
+
+    .spark {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #c4b5fd;
+      border-radius: 50%;
+      animation: sparkFly 1.5s linear forwards;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 min-h-screen flex items-center justify-center">
+
+  <!-- Floating Button with Ripple -->
+  <button id="chat-toggle" 
+    class="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 rounded-3xl flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 z-50 overflow-hidden">
+    <i class="fa-solid fa-sparkles text-white text-3xl relative z-10"></i>
+  </button>
+
+  <!-- Chat Widget -->
+  <div id="chat-widget" class="hidden fixed bottom-28 right-8 w-96 bg-zinc-900 rounded-3xl overflow-hidden chat-widget border border-violet-500/30">
+
+    <!-- Animated Header -->
+    <div class="bg-gradient-to-r from-violet-600 to-fuchsia-600 p-6 relative overflow-hidden">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/40 bot-avatar">
+            <i class="fa-solid fa-sparkles text-white text-3xl"></i>
+          </div>
+          <div>
+            <h3 class="text-white font-bold text-2xl tracking-tighter">Spark</h3>
+            <p class="text-white/90 text-sm flex items-center gap-2">
+              <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+              </span>
+              Always sparkling
+            </p>
+          </div>
+        </div>
+        <button id="close-chat" class="text-white/80 hover:text-white p-3 rounded-2xl hover:bg-white/10 transition-all">
+          <i class="fa-solid fa-xmark text-2xl"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div id="chat-messages" class="h-96 p-6 overflow-y-auto bg-zinc-950 space-y-6 scrollbar-thin scrollbar-thumb-violet-800">
+      <!-- Messages added by JS -->
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-6 bg-zinc-900 border-t border-violet-900/50">
+      <div class="flex gap-3">
+        <input 
+          id="user-input"
+          type="text" 
+          placeholder="Say something magical..." 
+          class="flex-1 bg-zinc-800 border border-violet-700 focus:border-fuchsia-400 rounded-3xl px-6 py-4 text-white placeholder-zinc-400 focus:outline-none transition-all"
+        />
+        <button id="send-btn"
+          class="send-btn w-14 h-14 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-3xl flex items-center justify-center text-white shadow-lg">
+          <i class="fa-solid fa-paper-plane text-xl"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById('chat-toggle');
+    const widget = document.getElementById('chat-widget');
+    const closeBtn = document.getElementById('close-chat');
+    const messagesContainer = document.getElementById('chat-messages');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    // Create floating spark effect
+    function createSpark(x, y) {
+      const spark = document.createElement('div');
+      spark.className = 'spark';
+      spark.style.left = x + 'px';
+      spark.style.top = y + 'px';
+      document.body.appendChild(spark);
+
+      setTimeout(() => spark.remove(), 1500);
+    }
+
+    function addWelcomeMessage() {
+      const welcome = `
+        <div class="flex gap-4 message">
+          <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center flex-shrink-0 bot-avatar">
+            <i class="fa-solid fa-sparkles text-white"></i>
+          </div>
+          <div class="bg-zinc-800 rounded-3xl rounded-tl-none px-6 py-4 text-white max-w-[260px]">
+            Hi there! ✨<br>
+            I'm Spark. Ready to create some magic?
+          </div>
+        </div>
+      `;
+      messagesContainer.innerHTML = welcome;
+    }
+
+    function addMessage(text, isUser) {
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const html = `
+        <div class="flex ${isUser ? 'justify-end' : 'gap-4'} message ${isUser ? 'user-message' : ''}">
+          ${!isUser ? `
+          <div class="w-10 h-10 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center flex-shrink-0 bot-avatar">
+            <i class="fa-solid fa-sparkles text-white"></i>
+          </div>` : ''}
+          
+          <div class="${isUser ? 'max-w-[250px]' : 'max-w-[260px]'}">
+            <div class="${isUser 
+              ? 'bg-gradient-to-br from-fuchsia-500 to-pink-500 text-white' 
+              : 'bg-zinc-800 text-white'} 
+              rounded-3xl ${isUser ? 'rounded-br-none' : 'rounded-tl-none'} px-6 py-4">
+              ${text}
+            </div>
+            <p class="text-xs text-zinc-500 mt-1 ${isUser ? 'text-right' : 'ml-2'}">${time}</p>
+          </div>
+        </div>
+      `;
+
+      messagesContainer.insertAdjacentHTML('beforeend', html);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function toggleChat() {
+      widget.classList.toggle('hidden');
+      if (!widget.classList.contains('hidden') && messagesContainer.children.length === 0) {
+        addWelcomeMessage();
+        setTimeout(() => input.focus(), 300);
+      }
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, true);
+      input.value = '';
+
+      // Spark effect on send
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          const rect = sendBtn.getBoundingClientRect();
+          createSpark(rect.left + Math.random() * 50, rect.top + Math.random() * 50);
+        }, i * 60);
+      }
+
+      setTimeout(() => {
+        const replies = [
+          "That's beautiful ✨",
+          "I love this energy!",
+          "Here's what came to mind...",
+          "You're making me sparkle!",
+          "Magic happening..."
+        ];
+        addMessage(replies[Math.floor(Math.random() * replies.length)], false);
+      }, 800);
+    }
+
+    // Event Listeners
+    toggleBtn.addEventListener('click', toggleChat);
+    closeBtn.addEventListener('click', toggleChat);
+    sendBtn.addEventListener('click', sendMessage);
+
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // Click effect on floating button
+    toggleBtn.addEventListener('mousedown', (e) => {
+      for (let i = 0; i < 12; i++) {
+        setTimeout(() => {
+          createSpark(e.clientX + (Math.random() - 0.5) * 60, e.clientY + (Math.random() - 0.5) * 60);
+        }, i * 30);
+      }
+    });
+  </script>
+</body>
+</html>
