@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Codzar Chat Widget</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .chat-widget {
+      box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.3);
+    }
+
+    .message {
+      animation: modernPop 0.4s ease-out forwards;
+    }
+
+    @keyframes modernPop {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .input-focus {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 min-h-screen flex items-center justify-center">
+
+  <!-- Modern Floating Button -->
+  <button id="chat-toggle"
+    class="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 z-50">
+    <i class="fa-solid fa-headset text-white text-3xl"></i>
+  </button>
+
+  <!-- Chat Widget -->
+  <div id="chat-widget" class="hidden fixed bottom-28 right-8 w-96 bg-zinc-900 rounded-3xl overflow-hidden chat-widget">
+
+    <!-- Header -->
+    <div class="bg-zinc-800 px-6 py-5 flex items-center justify-between border-b border-zinc-700">
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <div class="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center">
+            <i class="fa-solid fa-headset text-white text-2xl"></i>
+          </div>
+          <div class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-400 border-2 border-zinc-900 rounded-full"></div>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold text-xl">Codzar</h3>
+          <p class="text-emerald-400 text-sm font-medium flex items-center gap-1">
+            <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+            Online now
+          </p>
+        </div>
+      </div>
+      
+      <button id="close-chat" 
+        class="text-zinc-400 hover:text-white p-2 rounded-xl hover:bg-zinc-700 transition-colors">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Messages Area -->
+    <div id="chat-messages" class="h-96 p-6 overflow-y-auto bg-zinc-950 space-y-6 scrollbar-thin scrollbar-thumb-zinc-700">
+      <!-- Messages added by JS -->
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-6 bg-zinc-900 border-t border-zinc-700">
+      <div class="flex items-center gap-3">
+        <input 
+          id="user-input"
+          type="text" 
+          placeholder="Ask me anything..." 
+          class="input-focus flex-1 bg-zinc-800 border border-zinc-700 focus:border-blue-500 rounded-2xl px-6 py-4 text-white placeholder-zinc-400 focus:outline-none text-base"
+        />
+        <button id="send-btn"
+          class="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white hover:brightness-110 active:scale-95 transition-all">
+          <i class="fa-solid fa-arrow-up"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById('chat-toggle');
+    const widget = document.getElementById('chat-widget');
+    const closeBtn = document.getElementById('close-chat');
+    const messagesContainer = document.getElementById('chat-messages');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    function addWelcomeMessage() {
+      const welcome = `
+        <div class="flex gap-4 message">
+          <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-headset text-white"></i>
+          </div>
+          <div class="bg-zinc-800 rounded-3xl rounded-tl-none px-6 py-4 text-white max-w-[260px]">
+            Hi! I'm Echo.<br>
+            How can I help you today?
+          </div>
+        </div>
+      `;
+      messagesContainer.innerHTML = welcome;
+    }
+
+    function addMessage(text, isUser) {
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const html = `
+        <div class="flex ${isUser ? 'justify-end' : 'gap-4'} message">
+          ${!isUser ? `
+          <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-headset text-white"></i>
+          </div>` : ''}
+          
+          <div class="${isUser ? 'max-w-[250px]' : 'max-w-[260px]'}">
+            <div class="${isUser 
+              ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white' 
+              : 'bg-zinc-800 text-white'} 
+              rounded-3xl ${isUser ? 'rounded-br-none' : 'rounded-tl-none'} px-6 py-4">
+              ${text}
+            </div>
+            <p class="text-xs text-zinc-500 mt-1 ${isUser ? 'text-right' : 'ml-2'}">${time}</p>
+          </div>
+        </div>
+      `;
+
+      messagesContainer.insertAdjacentHTML('beforeend', html);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function toggleChat() {
+      widget.classList.toggle('hidden');
+      if (!widget.classList.contains('hidden') && messagesContainer.children.length === 0) {
+        addWelcomeMessage();
+        input.focus();
+      }
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, true);
+      input.value = '';
+
+      setTimeout(() => {
+        const replies = [
+          "Got it! Here's what I think...",
+          "That's an interesting point.",
+          "Let me help you with that.",
+          "Absolutely, here's my take.",
+          "Thanks for asking — here's the answer."
+        ];
+        addMessage(replies[Math.floor(Math.random() * replies.length)], false);
+      }, 650);
+    }
+
+    // Event listeners
+    toggleBtn.addEventListener('click', toggleChat);
+    closeBtn.addEventListener('click', toggleChat);
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
