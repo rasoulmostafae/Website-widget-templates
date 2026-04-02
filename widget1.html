@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emerald Chat Widget</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .chat-bubble {
+      animation: bubblePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes bubblePop {
+      0% { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    .chat-widget {
+      box-shadow: 0 30px 70px -15px rgba(16, 185, 129, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 min-h-screen flex items-center justify-center">
+
+  <!-- Floating Button -->
+  <button id="chat-toggle" 
+    class="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 z-50 group">
+    <i class="fa-solid fa-comments text-3xl text-white group-active:rotate-12 transition-transform"></i>
+  </button>
+
+  <!-- Chat Widget -->
+  <div id="chat-widget" class="hidden fixed bottom-28 right-8 w-96 bg-zinc-900 rounded-3xl overflow-hidden chat-widget border border-emerald-900/50">
+    
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-6 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <div class="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/30">
+            <i class="fa-solid fa-sparkles text-white text-3xl"></i>
+          </div>
+          <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-400 rounded-full border-2 border-zinc-900 flex items-center justify-center">
+            <span class="text-[10px]">✦</span>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold text-xl tracking-tight">Codzar</h3>
+          <p class="text-emerald-100 text-sm flex items-center gap-2">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-400"></span>
+            </span>
+            Always here for you
+          </p>
+        </div>
+      </div>
+      
+      <button id="close-chat" class="w-9 h-9 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 rounded-2xl transition-all">
+        <i class="fa-solid fa-xmark text-2xl"></i>
+      </button>
+    </div>
+
+    <!-- Messages Area -->
+    <div id="chat-messages" class="h-96 p-6 overflow-y-auto bg-zinc-950 space-y-6 scrollbar-thin scrollbar-thumb-teal-800">
+      <!-- JS will add messages here -->
+    </div>
+
+    <!-- Input -->
+    <div class="p-6 bg-zinc-900 border-t border-teal-900/50">
+      <div class="flex items-center gap-3">
+        <input 
+          id="user-input"
+          type="text" 
+          placeholder="Ask me anything..." 
+          class="flex-1 bg-zinc-800 border border-teal-800 focus:border-teal-400 rounded-3xl px-6 py-4 text-white placeholder-zinc-400 focus:outline-none transition-all text-base"
+        />
+        <button id="send-btn"
+          class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center hover:scale-110 transition-all shadow-lg">
+          <i class="fa-solid fa-paper-plane text-white text-xl"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById('chat-toggle');
+    const widget = document.getElementById('chat-widget');
+    const closeBtn = document.getElementById('close-chat');
+    const messagesContainer = document.getElementById('chat-messages');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    function addWelcomeMessage() {
+      const welcome = `
+        <div class="flex gap-4">
+          <div class="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-sparkles text-white"></i>
+          </div>
+          <div class="bg-zinc-800 rounded-3xl rounded-tl-none px-6 py-4 text-white max-w-[260px]">
+            Hello! I'm <span class="font-semibold text-teal-400">Nova</span>.<br>
+            What beautiful thing shall we create or talk about today? ✨
+          </div>
+        </div>
+      `;
+      messagesContainer.innerHTML = welcome;
+    }
+
+    function addMessage(text, isUser) {
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const msgHTML = `
+        <div class="flex ${isUser ? 'justify-end' : 'gap-4'}">
+          ${isUser ? '' : `
+          <div class="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-sparkles text-white"></i>
+          </div>`}
+          
+          <div class="${isUser ? 'max-w-[250px]' : 'max-w-[270px]'}">
+            <div class="${isUser 
+              ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white' 
+              : 'bg-zinc-800 text-zinc-100'} 
+              rounded-3xl ${isUser ? 'rounded-br-none' : 'rounded-tl-none'} px-6 py-4">
+              ${text}
+            </div>
+            <p class="text-[10px] text-zinc-500 mt-1 ${isUser ? 'text-right' : ''}">${time}</p>
+          </div>
+        </div>
+      `;
+
+      messagesContainer.insertAdjacentHTML('beforeend', msgHTML);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function toggleChat() {
+      widget.classList.toggle('hidden');
+      if (!widget.classList.contains('hidden')) {
+        input.focus();
+        if (messagesContainer.children.length === 0) addWelcomeMessage();
+      }
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, true);
+      input.value = '';
+
+      // Fake AI reply
+      setTimeout(() => {
+        const replies = [
+          "That's an excellent thought! ✨",
+          "I was hoping you'd ask that...",
+          "Let me share something magical with you...",
+          "Absolutely love this direction!",
+          "Here's what my heart says..."
+        ];
+        addMessage(replies[Math.floor(Math.random() * replies.length)], false);
+      }, 700);
+    }
+
+    // Event Listeners
+    toggleBtn.addEventListener('click', toggleChat);
+    closeBtn.addEventListener('click', toggleChat);
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
